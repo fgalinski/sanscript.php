@@ -442,7 +442,7 @@ class Sanscript {
         $kolkata['vowels'] = array("a", "ā", "i", "ī", "u", "ū", "ṛ", "ṝ", "ḷ", "ḹ", "e", "ē", "ai", "o", "ō", "au");
         $this->schemes['kolkata'] = &$kolkata;
 
-        $schemeNames = array("iast", "itrans", "hk", "kolkata", "slp1", "velthuis", "wx");
+        $schemeNames = array("iast", "itrans", "hk", "kolkata", "slp1", "velthuis", "wx", 'ipa', 'simplified', 'iso15919');
         // These schemes already belong to $schemes. But by adding
         // them again with `addRomanScheme`, we automatically build up
         // `romanSchemes` and define a `vowel_marks` field for each one.
