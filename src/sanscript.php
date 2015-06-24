@@ -287,6 +287,33 @@ class Sanscript {
             "consonants" => array("k", "K", "g", "G", "f", "c", "C", "j", "J", "F", "t", "T", "d", "D", "N", "w", "W", "x", "X", "n", "p", "P", "b", "B", "m", "y", "r", "l", "v", "S", "R", "s", "h", "", "kR", "jF"),
             "symbols" => array("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "oM", "'", "|", "||")
         ),
+        
+        'ipa' => array(
+            'vowels' => array('ə', 'ɑː', 'i', 'iː', 'u', 'uː', 'ɹ̩', 'ɹ̩ː', 'l̩', 'l̩ː', '', 'eː', 'aːi', '', 'oː', 'aːu'),
+            'other_marks' => array('ⁿ', 'h', ''),
+            'virama' => array(''),
+            'consonants' => array('k', 'kʱ', 'ɡ', 'ɡʱ', 'ŋ', 'c', 'cʰ', 'ɟ', 'ɟʰ', 'ɲ', 'ʈ', 'ʈʰ', 'ɖ', 'ɖʰ', 'ɳ', 't̪', 't̪ʰ', 'd̪', 'd̪ʰ', 'n', 'p', 'pʰ', 'b', 'bʰ', 'm', 'j', 'r', 'l', 'v', 'ɕ', 'ʂ', 's', 'ɦ', '', '', ''),
+            'symbols' => array('', '', '', '', '', '', '', '', '', '', '', '', '', ''),
+            'consonantFiller' => 'ə',
+        ),
+        
+        'simplified' => array(
+            'vowels' => array('a', 'a', 'i', 'i', 'u', 'u', 'ri', 'ri', 'li', 'li', '', 'e', 'ai', '', 'o', 'au'),
+            'other_marks' => array('m', 'h', 'm'),
+            'virama' => array(''),
+            'consonants' => array('k', 'kh', 'g', 'gh', 'n', 'ch', 'chh', 'j', 'j', 'n', 't', 'th', 'd', 'dh', 'n', 't', 'th', 'd', 'dh', 'n', 'p', 'ph', 'b', 'bh', 'm', 'y', 'r', 'l', 'v', 'sh', 'sh', 's', 'h', 'l', 'ks', 'jn'),
+            'symbols' => array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'om', '\'', '|', '||')
+        ),
+        
+        'iso15919' => array(
+            'vowels' => array('a', 'ā', 'i', 'ī', 'u', 'ū', 'r̥', 'r̥̄', 'l̥', 'l̥̄', '', 'ē', 'ai', '', 'ō', 'au'),
+            'other_marks' => array('ṁ', 'ḥ', 'm̐'),
+            'virama' => array(''),
+            'consonants' => array('k', 'kh', 'g', 'gh', 'ṅ', 'c', 'ch', 'j', 'jh', 'ñ', 'ṭ', 'ṭh', 'ḍ', 'ḍh', 'ṇ', 't', 'th', 'd', 'dh', 'n', 'p', 'ph', 'b', 'bh', 'm', 'y', 'r', 'l', 'v', 'ś', 'ṣ', 's', 'h', 'ḻ', 'kṣ', 'jñ'),
+            'symbols' => array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'oṃ', '\'', '।', '॥'),
+            'accent' => array("\\'", "\\_"),
+            'combo_accent' => array("\\'H", "\\_H", "\\'M", "\\_M"),
+        ),
     );
 
     // Set of names of Roman schemes.
@@ -446,6 +473,8 @@ class Sanscript {
         $tokenLengths = array();
         $marks = array();
         $toScheme = &$this->schemes[$to];
+        $consonantFillerFrom = (isset($fromScheme['consonantFiller']) ? $fromScheme['consonantFiller'] : 'a');
+        $consonantFillerTo = (isset($toScheme['consonantFiller']) ? $toScheme['consonantFiller'] : 'a');
 
         if (isset($this->allAlternates[$from])) {
             $alternates = &$this->allAlternates[$from];
@@ -501,6 +530,8 @@ class Sanscript {
             'maxTokenLength' => max($tokenLengths),
             'toRoman' => $this->isRomanScheme($to),
             'virama' => $toScheme['virama'][0],
+            'consonantFillerFrom' => $consonantFillerFrom,
+            'consonantFillerTo' => $consonantFillerTo,
         );
     }
 
@@ -526,6 +557,7 @@ class Sanscript {
         $virama = &$map['virama'];
         $dataChars = preg_split('//u', $data, -1, PREG_SPLIT_NO_EMPTY);
         $dataLength = count($dataChars);
+        $consonantFiller = &$map['consonantFillerFrom'];
 
         // Transliteration state. It's controlled by these values:
         // - `$skippingSGML`: are we in SGML?
@@ -574,7 +606,7 @@ class Sanscript {
                         if ($hadConsonant) {
                             if (isset($marks[$token])) {
                                 $buf[] = $marks[$token];
-                            } else if ($token !== 'a') {
+                            } else if ($token !== $consonantFiller) {
                                 $buf[] = $virama;
                                 $buf[] = $letters[$token];
                             }
@@ -621,6 +653,7 @@ class Sanscript {
         $letters = &$map['letters'];
         $marks = &$map['marks'];
         $toRoman = &$map['toRoman'];
+        $consonantFiller = &$map['consonantFillerTo'];
         $skippingTrans = FALSE;
         $dataChars = preg_split('//u', $data, -1, PREG_SPLIT_NO_EMPTY);
 
@@ -634,7 +667,7 @@ class Sanscript {
                     $danglingHash = TRUE;
                 }
                 if ($hadRomanConsonant) {
-                    $buf[] = 'a';
+                    $buf[] = $consonantFiller;
                     $hadRomanConsonant = FALSE;
                 }
                 continue;
@@ -652,7 +685,7 @@ class Sanscript {
                     $danglingHash = FALSE;
                 }
                 if ($hadRomanConsonant) {
-                    $buf[] = 'a';
+                    $buf[] = $consonantFiller;
                     $hadRomanConsonant = FALSE;
                 }
 
@@ -666,8 +699,9 @@ class Sanscript {
                 }
             }
         }
+
         if ($hadRomanConsonant) {
-            $buf[] = 'a';
+            $buf[] = $consonantFiller;
         }
         return implode('', $buf);
     }
